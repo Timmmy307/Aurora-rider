@@ -26,6 +26,9 @@ require('aframe-state-component');
 require('aframe-slice9-component');
 require('aframe-thumb-controls-component');
 
+// Aurora Rider Multiplayer Client
+require('./lib/multiplayer-client');
+
 requireAll(require.context('./components/', true, /\.js$/));
 requireAll(require.context('./state/', true, /\.js$/));
 
@@ -94,7 +97,7 @@ function initSubscribeForm () {
     xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
     xhr.send(JSON.stringify({
       email: document.querySelector('[name="email"]').value,
-      source: 'moonrider'
+      source: 'aurora-rider'
     }));
 
     return false;

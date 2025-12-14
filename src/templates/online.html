@@ -1,0 +1,362 @@
+<!-- Aurora Rider Online Mode UI -->
+
+<!-- Full screen blocker when online menu is active -->
+<a-entity
+  id="onlineBlocker"
+  bind__visible="onlineMenuActive"
+  position="0 1.6 -1.5">
+  <a-entity
+    geometry="primitive: plane; width: 10; height: 10"
+    material="shader: flat; color: #000; opacity: 0.98"
+    position="0 0 -0.5"
+    bind-toggle__raycastable="onlineMenuActive"></a-entity>
+</a-entity>
+
+<!-- Online Menu Container -->
+<a-entity
+  id="onlineMenu"
+  bind__visible="onlineMenuActive"
+  position="0 1.6 -1.8">
+
+  <!-- Background Panel -->
+  <a-entity
+    geometry="primitive: plane; width: 2.4; height: 1.8"
+    material="shader: flat; color: #111; opacity: 1"
+    position="0 0 -0.02"></a-entity>
+  
+  <!-- Border -->
+  <a-entity
+    geometry="primitive: plane; width: 2.5; height: 1.9"
+    material="shader: flat; color: #FF6BE6; opacity: 1"
+    position="0 0 -0.03"></a-entity>
+
+  <!-- Title -->
+  <a-entity
+    mixin="font"
+    text="align: center; wrapCount: 25; value: AURORA RIDER ONLINE; width: 2.2; color: #FF6BE6"
+    position="0 0.7 0.01"></a-entity>
+
+  <!-- ============ MAIN PANEL - Create/Join ============ -->
+  <a-entity id="onlineMainPanel" bind__visible="onlineShowMainPanel">
+    
+    <a-entity mixin="font" text="align: center; color: #AAA; wrapCount: 40; value: Play with friends! Create a room or join with a code.; width: 2" position="0 0.45 0.01"></a-entity>
+    
+    <!-- Create Room Button -->
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.8; height: 0.35"
+      material="shader: flat; color: #333"
+      bind-toggle__raycastable="onlineShowMainPanel"
+      position="-0.5 0.1 0.01"
+      proxy-event="event: click; to: a-scene; as: onlinecreatepanel"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03"
+      animation__mouseenter="property: material.color; to: #555; startEvents: mouseenter; dur: 100"
+      animation__mouseleave="property: material.color; to: #333; startEvents: mouseleave; dur: 100">
+      <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 12; value: CREATE\nROOM" position="0 0 0.01"></a-entity>
+    </a-entity>
+
+    <!-- Join Room Button -->
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.8; height: 0.35"
+      material="shader: flat; color: #333"
+      bind-toggle__raycastable="onlineShowMainPanel"
+      position="0.5 0.1 0.01"
+      proxy-event="event: click; to: a-scene; as: onlinejoinpanel"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03"
+      animation__mouseenter="property: material.color; to: #555; startEvents: mouseenter; dur: 100"
+      animation__mouseleave="property: material.color; to: #333; startEvents: mouseleave; dur: 100">
+      <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 12; value: JOIN\nROOM" position="0 0 0.01"></a-entity>
+    </a-entity>
+
+    <!-- Back Button -->
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.5; height: 0.2"
+      material="shader: flat; color: #222"
+      bind-toggle__raycastable="onlineShowMainPanel"
+      position="0 -0.7 0.01"
+      proxy-event="event: click; to: a-scene; as: onlinemenutoggle"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03"
+      animation__mouseenter="property: material.color; to: #444; startEvents: mouseenter; dur: 100"
+      animation__mouseleave="property: material.color; to: #222; startEvents: mouseleave; dur: 100">
+      <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 10; value: BACK" position="0 0 0.01"></a-entity>
+    </a-entity>
+  </a-entity>
+
+  <!-- ============ CREATE PANEL - Username Entry ============ -->
+  <a-entity id="onlineCreatePanel" bind__visible="onlineCreatePanelActive">
+    
+    <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 30; value: ENTER YOUR NAME; width: 1.8" position="0 0.45 0.01"></a-entity>
+    
+    <!-- Username display box -->
+    <a-entity
+      geometry="primitive: plane; width: 1.4; height: 0.18"
+      material="shader: flat; color: #222"
+      position="0 0.2 0.01">
+      <a-entity
+        id="createUsernameDisplay"
+        mixin="font"
+        bind__text="value: onlineUsername"
+        text="align: center; color: #0FF; wrapCount: 15; width: 1.2"
+        position="0 0 0.01"></a-entity>
+    </a-entity>
+    
+    <!-- Keyboard -->
+    <a-entity
+      id="createUsernameKeyboard"
+      bind__super-keyboard="{% if not DEBUG_KEYBOARD %}hand: activeHand === 'left' && '#leftHand' || '#rightHand'; {% endif %}show: onlineCreatePanelActive"
+      super-keyboard="label: ; inputColor: #0FF; labelColor: #FFF; width: 1.6; hand: {{ DEBUG_KEYBOARD and '#mouseCursor' or '#rightHand' }}; imagePath: assets/img/keyboard; font: assets/fonts/Viga-Regular.json; align: center; model: superkeyboard; keyColor: #fff; injectToRaycasterObjects: false; filters: allupper; keyHoverColor: #fff; maxLength: 12"
+      position="0 -0.25 0.02"
+      keyboard-raycastable="condition: onlineCreatePanelActive"
+      proxy-event__input="event: superkeyboardchange; to: a-scene; as: onlinesetusername"></a-entity>
+    
+    <!-- Create Room Button -->
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.9; height: 0.22"
+      material="shader: flat; color: #1a6b1a"
+      bind-toggle__raycastable="onlineCreatePanelActive"
+      position="0 -0.65 0.01"
+      proxy-event="event: click; to: a-scene; as: onlinecreateroom"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03"
+      animation__mouseenter="property: material.color; to: #2a9b2a; startEvents: mouseenter; dur: 100"
+      animation__mouseleave="property: material.color; to: #1a6b1a; startEvents: mouseleave; dur: 100">
+      <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 15; value: CREATE ROOM" position="0 0 0.01"></a-entity>
+    </a-entity>
+
+    <!-- Back Button -->
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.5; height: 0.18"
+      material="shader: flat; color: #222"
+      bind-toggle__raycastable="onlineCreatePanelActive"
+      position="0 -0.8 0.01"
+      proxy-event="event: click; to: a-scene; as: onlinemenuback"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03">
+      <a-entity mixin="font" text="align: center; color: #888; wrapCount: 10; value: BACK" position="0 0 0.01"></a-entity>
+    </a-entity>
+  </a-entity>
+
+  <!-- ============ JOIN PANEL - Username Entry ============ -->
+  <a-entity id="onlineJoinPanel" bind__visible="onlineJoinPanelActive">
+    
+    <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 30; value: ENTER YOUR NAME; width: 1.8" position="0 0.45 0.01"></a-entity>
+    
+    <!-- Username display box -->
+    <a-entity
+      geometry="primitive: plane; width: 1.4; height: 0.18"
+      material="shader: flat; color: #222"
+      position="0 0.2 0.01">
+      <a-entity
+        id="joinUsernameDisplay"
+        mixin="font"
+        bind__text="value: onlineUsername"
+        text="align: center; color: #0FF; wrapCount: 15; width: 1.2"
+        position="0 0 0.01"></a-entity>
+    </a-entity>
+    
+    <!-- Keyboard -->
+    <a-entity
+      id="joinUsernameKeyboard"
+      bind__super-keyboard="{% if not DEBUG_KEYBOARD %}hand: activeHand === 'left' && '#leftHand' || '#rightHand'; {% endif %}show: onlineJoinPanelActive"
+      super-keyboard="label: ; inputColor: #0FF; labelColor: #FFF; width: 1.6; hand: {{ DEBUG_KEYBOARD and '#mouseCursor' or '#rightHand' }}; imagePath: assets/img/keyboard; font: assets/fonts/Viga-Regular.json; align: center; model: superkeyboard; keyColor: #fff; injectToRaycasterObjects: false; filters: allupper; keyHoverColor: #fff; maxLength: 12"
+      position="0 -0.25 0.02"
+      keyboard-raycastable="condition: onlineJoinPanelActive"
+      proxy-event__input="event: superkeyboardchange; to: a-scene; as: onlinesetusername"></a-entity>
+    
+    <!-- Next Button -->
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.6; height: 0.22"
+      material="shader: flat; color: #1a1a6b"
+      bind-toggle__raycastable="onlineJoinPanelActive"
+      position="0 -0.65 0.01"
+      proxy-event="event: click; to: a-scene; as: onlineshowjoincode"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03"
+      animation__mouseenter="property: material.color; to: #2a2a9b; startEvents: mouseenter; dur: 100"
+      animation__mouseleave="property: material.color; to: #1a1a6b; startEvents: mouseleave; dur: 100">
+      <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 10; value: NEXT" position="0 0 0.01"></a-entity>
+    </a-entity>
+
+    <!-- Back Button -->
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.5; height: 0.18"
+      material="shader: flat; color: #222"
+      bind-toggle__raycastable="onlineJoinPanelActive"
+      position="0 -0.8 0.01"
+      proxy-event="event: click; to: a-scene; as: onlinemenuback"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03">
+      <a-entity mixin="font" text="align: center; color: #888; wrapCount: 10; value: BACK" position="0 0 0.01"></a-entity>
+    </a-entity>
+  </a-entity>
+
+  <!-- ============ JOIN CODE PANEL ============ -->
+  <a-entity id="onlineJoinCodePanel" bind__visible="onlineJoinCodePanelActive">
+    
+    <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 30; value: ENTER ROOM CODE; width: 1.8" position="0 0.45 0.01"></a-entity>
+    
+    <!-- Code display box -->
+    <a-entity
+      geometry="primitive: plane; width: 1.0; height: 0.25"
+      material="shader: flat; color: #222"
+      position="0 0.2 0.01">
+      <a-entity
+        id="joinCodeDisplay"
+        mixin="font"
+        bind__text="value: onlineJoinCode"
+        text="align: center; color: #FF6BE6; wrapCount: 8; width: 1.5"
+        position="0 0 0.01"></a-entity>
+    </a-entity>
+    
+    <!-- Keyboard -->
+    <a-entity
+      id="joinCodeKeyboard"
+      bind__super-keyboard="{% if not DEBUG_KEYBOARD %}hand: activeHand === 'left' && '#leftHand' || '#rightHand'; {% endif %}show: onlineJoinCodePanelActive"
+      super-keyboard="label: ; inputColor: #FF6BE6; labelColor: #FFF; width: 1.6; hand: {{ DEBUG_KEYBOARD and '#mouseCursor' or '#rightHand' }}; imagePath: assets/img/keyboard; font: assets/fonts/Viga-Regular.json; align: center; model: superkeyboard; keyColor: #fff; injectToRaycasterObjects: false; filters: allupper; keyHoverColor: #fff; maxLength: 6"
+      position="0 -0.25 0.02"
+      keyboard-raycastable="condition: onlineJoinCodePanelActive"
+      proxy-event__input="event: superkeyboardchange; to: a-scene; as: onlinesetjoincode"></a-entity>
+    
+    <!-- Join Button -->
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.7; height: 0.22"
+      material="shader: flat; color: #1a6b1a"
+      bind-toggle__raycastable="onlineJoinCodePanelActive"
+      position="0 -0.65 0.01"
+      proxy-event="event: click; to: a-scene; as: onlinejoinroom"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03"
+      animation__mouseenter="property: material.color; to: #2a9b2a; startEvents: mouseenter; dur: 100"
+      animation__mouseleave="property: material.color; to: #1a6b1a; startEvents: mouseleave; dur: 100">
+      <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 12; value: JOIN ROOM" position="0 0 0.01"></a-entity>
+    </a-entity>
+
+    <!-- Back Button -->
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.5; height: 0.18"
+      material="shader: flat; color: #222"
+      bind-toggle__raycastable="onlineJoinCodePanelActive"
+      position="0 -0.8 0.01"
+      proxy-event="event: click; to: a-scene; as: onlinemenuback"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03">
+      <a-entity mixin="font" text="align: center; color: #888; wrapCount: 10; value: BACK" position="0 0 0.01"></a-entity>
+    </a-entity>
+  </a-entity>
+
+  <!-- ============ LOBBY PANEL ============ -->
+  <a-entity id="onlineLobbyPanel" bind__visible="onlineInLobby">
+    
+    <a-entity mixin="font" text="align: center; color: #888; wrapCount: 25; value: ROOM CODE:; width: 1.2" position="0 0.5 0.01"></a-entity>
+    <a-entity mixin="font" bind__text="value: onlineRoomCode" text="align: center; wrapCount: 8; width: 2; color: #FF6BE6" position="0 0.35 0.01"></a-entity>
+    
+    <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 25; value: PLAYERS:; width: 1.2" position="0 0.1 0.01"></a-entity>
+    <a-entity mixin="font" bind__text="value: onlinePlayersText" text="align: center; wrapCount: 35; width: 2; lineHeight: 50; color: #0FF" position="0 -0.15 0.01"></a-entity>
+    
+    <!-- Host: Pick Song Button -->
+    <a-entity bind__visible="onlineIsHost">
+      <a-entity
+        class="clickable"
+        geometry="primitive: plane; width: 0.9; height: 0.25"
+        material="shader: flat; color: #1a6b1a"
+        bind-toggle__raycastable="onlineIsHost"
+        position="0 -0.5 0.01"
+        proxy-event="event: click; to: a-scene; as: onlineselectsong"
+        play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03"
+        animation__mouseenter="property: material.color; to: #2a9b2a; startEvents: mouseenter; dur: 100"
+        animation__mouseleave="property: material.color; to: #1a6b1a; startEvents: mouseleave; dur: 100">
+        <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 12; value: PICK SONG" position="0 0 0.01"></a-entity>
+      </a-entity>
+    </a-entity>
+    
+    <!-- Non-host: Waiting message -->
+    <a-entity bind__visible="!onlineIsHost">
+      <a-entity mixin="font" text="align: center; color: #888; wrapCount: 40; value: Waiting for host to pick a song...; width: 1.8" position="0 -0.5 0.01"></a-entity>
+    </a-entity>
+
+    <!-- Leave Button -->
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.5; height: 0.18"
+      material="shader: flat; color: #6b1a1a"
+      bind-toggle__raycastable="onlineInLobby"
+      position="0 -0.75 0.01"
+      proxy-event="event: click; to: a-scene; as: onlineleaveroom"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03"
+      animation__mouseenter="property: material.color; to: #9b2a2a; startEvents: mouseenter; dur: 100"
+      animation__mouseleave="property: material.color; to: #6b1a1a; startEvents: mouseleave; dur: 100">
+      <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 10; value: LEAVE" position="0 0 0.01"></a-entity>
+    </a-entity>
+  </a-entity>
+
+  <!-- ============ COUNTDOWN PANEL ============ -->
+  <a-entity id="onlineCountdownPanel" bind__visible="onlineInCountdown">
+    <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 20; value: GET READY!; width: 2" position="0 0.3 0.01"></a-entity>
+    <a-entity mixin="font" bind__text="value: onlineCountdown" text="align: center; wrapCount: 3; width: 4; color: #FF6BE6" position="0 -0.1 0.01"></a-entity>
+  </a-entity>
+
+  <!-- ============ ERROR DISPLAY ============ -->
+  <a-entity bind__visible="onlineHasError">
+    <a-entity
+      geometry="primitive: plane; width: 2; height: 0.15"
+      material="shader: flat; color: #400"
+      position="0 -0.85 0.02"></a-entity>
+    <a-entity mixin="font" bind__text="value: onlineError" text="align: center; color: #F66; wrapCount: 50; width: 1.8" position="0 -0.85 0.03"></a-entity>
+  </a-entity>
+</a-entity>
+
+<!-- ============ RESULTS SCREEN ============ -->
+<a-entity
+  id="onlineResults"
+  bind__visible="onlineInResults"
+  position="0 1.6 -1.8">
+
+  <!-- Background -->
+  <a-entity
+    geometry="primitive: plane; width: 2.4; height: 2"
+    material="shader: flat; color: #111; opacity: 1"
+    position="0 0 -0.02"></a-entity>
+  <a-entity
+    geometry="primitive: plane; width: 2.5; height: 2.1"
+    material="shader: flat; color: #0FF; opacity: 1"
+    position="0 0 -0.03"></a-entity>
+
+  <a-entity mixin="font" text="align: center; wrapCount: 20; value: FINAL SCORES; width: 2.2; color: #FF6BE6" position="0 0.8 0.01"></a-entity>
+
+  <a-entity mixin="font" bind__text="value: onlineLeaderboardText" text="align: center; wrapCount: 45; width: 2.2; lineHeight: 55; color: #0FF" position="0 0.3 0.01"></a-entity>
+
+  <!-- Host: Play Again -->
+  <a-entity bind__visible="onlineIsHost">
+    <a-entity
+      class="clickable"
+      geometry="primitive: plane; width: 0.8; height: 0.22"
+      material="shader: flat; color: #1a6b1a"
+      bind-toggle__raycastable="onlineIsHost"
+      position="-0.5 -0.6 0.01"
+      proxy-event="event: click; to: a-scene; as: onlineplayagain"
+      play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03"
+      animation__mouseenter="property: material.color; to: #2a9b2a; startEvents: mouseenter; dur: 100"
+      animation__mouseleave="property: material.color; to: #1a6b1a; startEvents: mouseleave; dur: 100">
+      <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 12; value: PLAY AGAIN" position="0 0 0.01"></a-entity>
+    </a-entity>
+  </a-entity>
+
+  <!-- Leave Button -->
+  <a-entity
+    class="clickable"
+    geometry="primitive: plane; width: 0.5; height: 0.22"
+    material="shader: flat; color: #6b1a1a"
+    bind-toggle__raycastable="onlineInResults"
+    position="0.5 -0.6 0.01"
+    proxy-event="event: click; to: a-scene; as: onlineleaveroom"
+    play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03"
+    animation__mouseenter="property: material.color; to: #9b2a2a; startEvents: mouseenter; dur: 100"
+    animation__mouseleave="property: material.color; to: #6b1a1a; startEvents: mouseleave; dur: 100">
+    <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 10; value: LEAVE" position="0 0 0.01"></a-entity>
+  </a-entity>
+
+  <!-- Non-host waiting message -->
+  <a-entity bind__visible="!onlineIsHost" mixin="font" text="align: center; color: #888; wrapCount: 40; value: Waiting for host...; width: 1.8" position="0 -0.85 0.01"></a-entity>
+</a-entity>

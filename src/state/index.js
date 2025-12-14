@@ -3,6 +3,12 @@ import COLORS from '../constants/colors';
 const utils = require('../utils');
 const convertBeatmap = require('../lib/convert-beatmap');
 
+// Stub gtag if not defined (analytics removed)
+if (typeof window !== 'undefined' && typeof window.gtag === 'undefined') {
+  window.gtag = function() {};
+}
+var gtag = typeof window !== 'undefined' ? window.gtag : function() {};
+
 const challengeDataStore = {};
 let HAS_LOGGED_VR = false;
 const NUM_LEADERBOARD_DISPLAY = 10;
@@ -176,7 +182,46 @@ AFRAME.registerState({
       urlPage: 0,
     },
     searchResultsPage: [],
-    speed: 10
+    speed: 10,
+
+    // Online Multiplayer State
+    onlineMenuActive: false,
+    onlineCreatePanelActive: false,
+    onlineJoinPanelActive: false,
+    onlineRoomCode: '',
+    onlineRoomState: '',  // 'lobby', 'selecting', 'countdown', 'playing', 'results'
+    onlineGameMode: '',   // 'classic' or 'punch'
+    onlineIsHost: false,
+    onlineIsReady: false,
+    onlinePlayers: [],
+    onlinePlayersText: '',
+    onlineJoinCode: '',
+    onlineCountdown: 0,
+    onlineLeaderboard: [],
+    onlineLeaderboardText: '',
+    onlineConnected: false,
+    onlineError: '',
+    onlineHasError: false,
+    onlineUsername: '',
+    onlineJoinCodePanelActive: false,
+    // Computed booleans for UI binding
+    onlineNotInRoom: true,
+    onlineInLobby: false,
+    onlineInCountdown: false,
+    onlineInPlaying: false,
+    onlineInResults: false,
+    onlineShowMainPanel: true
+  },
+
+  // Helper to update computed online state booleans
+  computeOnlineState: function (state, roomState) {
+    state.onlineRoomState = roomState;
+    state.onlineNotInRoom = roomState === '';
+    state.onlineInLobby = roomState === 'lobby';
+    state.onlineInCountdown = roomState === 'countdown';
+    state.onlineInPlaying = roomState === 'playing';
+    state.onlineInResults = roomState === 'results';
+    state.onlineShowMainPanel = roomState === '' && !state.onlineCreatePanelActive && !state.onlineJoinPanelActive;
   },
 
   handlers: {
@@ -400,6 +445,207 @@ AFRAME.registerState({
     gamemode: (state, mode) => {
       state.gameMode = mode;
     },
+
+    // ==========================================
+    // ONLINE MULTIPLAYER EVENT HANDLERS
+    // ==========================================
+
+    onlinemenuopen: state => {
+      state.onlineMenuActive = true;
+      state.onlineCreatePanelActive = false;
+      state.onlineJoinPanelActive = false;
+    },
+
+    onlinemenuclose: state => {
+      state.onlineMenuActive = false;
+      state.onlineCreatePanelActive = false;
+      state.onlineJoinPanelActive = false;
+    },
+
+    onlineshowcreate: state => {
+      state.onlineCreatePanelActive = true;
+      state.onlineJoinPanelActive = false;
+    },
+
+    onlinehidecreate: state => {
+      state.onlineCreatePanelActive = false;
+    },
+
+    onlineshowjoin: state => {
+      state.onlineJoinPanelActive = true;
+      state.onlineCreatePanelActive = false;
+      state.onlineJoinCode = '';
+    },
+
+    onlinehidejoin: state => {
+      state.onlineJoinPanelActive = false;
+    },
+
+    onlinecreateclassic: state => {
+      state.onlineGameMode = 'classic';
+      // Trigger room creation via component
+    },
+
+    onlinecreatepunch: state => {
+      state.onlineGameMode = 'punch';
+      // Trigger room creation via component
+    },
+
+    onlinejoinconfirm: state => {
+      // Handled by component, just update UI state
+    },
+
+    onlinestatuschange: (state, payload) => {
+      state.onlineConnected = payload.connected;
+    },
+
+    onlineroomcreated: (state, payload) => {
+      state.onlineRoomCode = payload.code || payload.roomCode;
+      state.onlineRoomState = 'lobby';
+      state.onlineGameMode = 'classic';
+      state.onlineIsHost = true;
+      state.onlineCreatePanelActive = false;
+      state.onlinePlayers = payload.players || [];
+      state.onlineNotInRoom = false;
+      state.onlineInLobby = true;
+      state.onlineShowMainPanel = false;
+      updateOnlinePlayersText(state);
+    },
+
+    onlineroomjoined: (state, payload) => {
+      state.onlineRoomCode = payload.code || payload.roomCode;
+      state.onlineRoomState = 'lobby';
+      state.onlineGameMode = 'classic';
+      state.onlineIsHost = payload.isHost || false;
+      state.onlineJoinPanelActive = false;
+      state.onlineJoinCodePanelActive = false;
+      state.onlinePlayers = payload.players || [];
+      state.onlineNotInRoom = false;
+      state.onlineInLobby = true;
+      state.onlineShowMainPanel = false;
+      updateOnlinePlayersText(state);
+    },
+
+    onlineplayersupdate: (state, payload) => {
+      state.onlinePlayers = payload.players || [];
+      updateOnlinePlayersText(state);
+    },
+
+    onlineroomupdate: (state, payload) => {
+      state.onlinePlayers = payload.room.players;
+      state.onlineRoomState = payload.room.state;
+      state.onlineIsHost = payload.room.hostId === (window.AuroraRiderMultiplayer && window.AuroraRiderMultiplayer.socket && window.AuroraRiderMultiplayer.socket.id);
+      updateOnlinePlayersText(state);
+    },
+
+    onlineplayerjoined: (state, payload) => {
+      state.onlinePlayers = payload.room.players;
+      updateOnlinePlayersText(state);
+    },
+
+    onlineplayerleft: (state, payload) => {
+      state.onlinePlayers = payload.room.players;
+      updateOnlinePlayersText(state);
+    },
+
+    onlineplayerready: (state, payload) => {
+      state.onlinePlayers = payload.room.players;
+      // Update our own ready state
+      const myId = window.AuroraRiderMultiplayer && window.AuroraRiderMultiplayer.socket ? window.AuroraRiderMultiplayer.socket.id : null;
+      const myPlayer = payload.room.players.find(p => p.id === myId);
+      if (myPlayer) {
+        state.onlineIsReady = myPlayer.ready;
+      }
+      updateOnlinePlayersText(state);
+    },
+
+    onlinetoggleready: state => {
+      state.onlineIsReady = !state.onlineIsReady;
+    },
+
+    onlineleaveroom: state => {
+      state.onlineRoomCode = '';
+      state.onlineRoomState = '';
+      state.onlineGameMode = '';
+      state.onlineIsHost = false;
+      state.onlineIsReady = false;
+      state.onlinePlayers = [];
+      state.onlinePlayersText = '';
+      state.onlineCountdown = 0;
+    },
+
+    onlinegamestarting: (state, payload) => {
+      state.onlineCountdown = payload.countdown;
+      state.onlineRoomState = 'countdown';
+      state.gameMode = payload.gameMode;
+      Object.assign(state.menuSelectedChallenge, payload.challenge);
+    },
+
+    onlinecountdown: (state, payload) => {
+      state.onlineCountdown = payload.count;
+    },
+
+    onlinegamestarted: state => {
+      state.onlineCountdown = 0;
+      state.onlineRoomState = 'playing';
+      state.onlineMenuActive = false;
+      state.menuActive = false;
+    },
+
+    onlinescoreupdate: (state, payload) => {
+      state.onlineLeaderboard = payload.leaderboard || [];
+    },
+
+    onlinegameresults: (state, payload) => {
+      state.onlineLeaderboard = payload.leaderboard || [];
+      state.onlineRoomState = 'results';
+    },
+
+    onlineerror: (state, payload) => {
+      var message = typeof payload === 'string' ? payload : (payload.message || 'Unknown error');
+      state.onlineError = message;
+      state.onlineHasError = message !== '';
+      console.error('[Aurora Rider] Online error:', message);
+      // Clear error after 3 seconds
+      setTimeout(function () {
+        state.onlineError = '';
+        state.onlineHasError = false;
+      }, 3000);
+    },
+
+    onlinejoincodepanelshow: (state) => {
+      state.onlineJoinPanelActive = false;
+      state.onlineJoinCodePanelActive = true;
+      state.onlineShowMainPanel = false;
+    },
+
+    onlinesetusername: (state, payload) => {
+      var value = '';
+      if (typeof payload === 'string') {
+        value = payload;
+      } else if (payload && payload.value !== undefined) {
+        value = payload.value;
+      } else if (payload && payload.detail && payload.detail.value !== undefined) {
+        value = payload.detail.value;
+      }
+      state.onlineUsername = value.toUpperCase();
+    },
+
+    onlinesetjoincode: (state, payload) => {
+      var value = '';
+      if (typeof payload === 'string') {
+        value = payload;
+      } else if (payload && payload.value !== undefined) {
+        value = payload.value;
+      } else if (payload && payload.detail && payload.detail.value !== undefined) {
+        value = payload.detail.value;
+      }
+      state.onlineJoinCode = value.toUpperCase();
+    },
+
+    // ==========================================
+    // END ONLINE MULTIPLAYER HANDLERS
+    // ==========================================
 
     genreclear: state => {
       state.genre = '';
@@ -829,7 +1075,6 @@ AFRAME.registerState({
     wallhitstart: state => {
       takeDamage(state);
     },
-
     ziploaderend: (state, payload) => {
       state.challenge.audio = payload.audio;
       state.hasSongLoadError = false;
@@ -975,6 +1220,24 @@ function formatSongLength(songLength) {
 function computeBeatsText(state) {
   state.score.beatsText =
     `${state.score.beatsHit} / ${state.score.beatsMissed + state.score.beatsHit} BEATS`;
+}
+
+function updateOnlinePlayersText(state) {
+  if (!state.onlinePlayers || state.onlinePlayers.length === 0) {
+    state.onlinePlayersText = 'Waiting for players...';
+    return;
+  }
+  
+  state.onlinePlayersText = state.onlinePlayers.map(player => {
+    let text = player.name;
+    if (player.isHost) {
+      text += ' (Host)';
+    }
+    if (player.ready) {
+      text += ' ✓';
+    }
+    return text;
+  }).join('\n');
 }
 
 function clearLeaderboard(state) {

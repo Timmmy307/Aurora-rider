@@ -5,7 +5,9 @@ const iconPositions = {
   punchvr: 0.87,
   ride2d: 0.87,
   ridevr: 0.15,
-  viewer2d: 0.15
+  viewer2d: 0.15,
+  online2d: -0.6,
+  onlinevr: -1.35
 };
 
 const modeMap = {
@@ -13,7 +15,9 @@ const modeMap = {
   punchvr: 'punch',
   ride2d: 'ride',
   ridevr: 'ride',
-  viewer2d: 'viewer'
+  viewer2d: 'viewer',
+  online2d: 'online',
+  onlinevr: 'online'
 };
 
 AFRAME.registerComponent('menu-mode', {
@@ -24,9 +28,16 @@ AFRAME.registerComponent('menu-mode', {
 
   init: function () {
     this.el.addEventListener('click', evt => {
-      const item = evt.target.closest('[data-mode]');
-      const mode = item.dataset.mode;
-      const name = item.dataset.name;
+      var item = evt.target.closest('[data-mode]');
+      var mode = item.dataset.mode;
+      var name = item.dataset.name;
+      
+      // Handle online mode specially - open online menu
+      if (mode === 'online') {
+        this.el.sceneEl.emit('onlinemenutoggle', null, false);
+        return;
+      }
+      
       this.el.sceneEl.emit('gamemode', mode, false);
       if (this.data.hasVR) {
         localStorage.setItem('gameMode', name);
