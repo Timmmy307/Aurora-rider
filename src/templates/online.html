@@ -185,12 +185,34 @@
   <a-entity
     mixin="bigMenuButton"
     bind-toggle__raycastable="onlineMenuActive"
-    bind__visible="!onlineInCountdown && !onlineInLobby"
+    bind__visible="!onlineInCountdown && !onlineInLobby && !onlineWaitingForPlayers"
     position="0 -0.7 0.01"
     proxy-event="event: click; to: a-scene; as: onlinemenuback"
     play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03">
     <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 10; value: BACK" position="0 -0.05 0.01"></a-entity>
   </a-entity>
+</a-entity>
+
+<!-- Online Waiting Screen (waiting for other players to finish) -->
+<a-entity
+  id="onlineWaiting"
+  bind__visible="onlineWaitingForPlayers"
+  position="0 1.5 -2">
+
+  <a-entity
+    geometry="primitive: plane; width: 2.2; height: 1.2"
+    material="shader: flat; color: #111; opacity: 0.95"
+    position="0 0 -0.01"></a-entity>
+
+  <a-entity mixin="font" text="align: center; wrapCount: 20; value: SONG COMPLETE!; width: 2; color: #FF6BE6" position="0 0.35 0.01"></a-entity>
+  
+  <a-entity mixin="font" bind__text="value: onlineWaitingText" text="align: center; wrapCount: 40; width: 1.8; color: #0FF" position="0 0.05 0.01"></a-entity>
+  
+  <a-entity mixin="font" text="align: center; wrapCount: 50; value: Please wait for all players to finish...; width: 1.5; color: #888" position="0 -0.2 0.01"></a-entity>
+  
+  <!-- Animated dots -->
+  <a-entity mixin="font" text="align: center; wrapCount: 10; value: . . .; width: 1; color: #FFF" position="0 -0.4 0.01"
+    animation="property: text.opacity; from: 0.3; to: 1; dur: 500; loop: true; dir: alternate"></a-entity>
 </a-entity>
 
 <!-- Online Results Screen -->

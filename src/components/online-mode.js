@@ -108,7 +108,13 @@ AFRAME.registerComponent('online-mode', {
     });
     
     multiplayerClient.on('playerFinished', function (data) {
-      console.log('[Online] Player finished:', data.playerName);
+      console.log('[Online] Player finished:', data.playerName, 'Finished:', data.playersFinished, '/', data.totalPlayers);
+      // Update waiting count for everyone
+      scene.emit('onlineotherplayerfinished', {
+        playerName: data.playerName,
+        playersFinished: data.playersFinished,
+        totalPlayers: data.totalPlayers
+      });
     });
     
     multiplayerClient.on('gameResults', function (data) {
@@ -234,16 +240,24 @@ AFRAME.registerComponent('online-mode', {
       }
     });
     
-    // Victory/game complete - send final score
+    // Victory/game complete - send final score and show waiting screen
     scene.addEventListener('victory', function () {
       var state = scene.systems.state.state;
       if (self.inOnlineGame) {
+        console.log('[Online] Sending final score to server');
+        // Send score to server
         multiplayerClient.gameFinished({
           score: state.score.score,
           accuracy: parseFloat(state.score.finalAccuracy) || 0,
           maxCombo: state.score.maxCombo,
           beatsHit: state.score.beatsHit,
           beatsMissed: state.score.beatsMissed
+        });
+        
+        // Show initial waiting screen - will be updated by server's playerFinished event
+        scene.emit('onlineplayerfinished', {
+          playersFinished: 0,  // Will be updated by server
+          totalPlayers: state.onlinePlayers.length
         });
       }
     });

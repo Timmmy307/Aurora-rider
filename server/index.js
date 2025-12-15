@@ -493,27 +493,38 @@ io.on('connection', (socket) => {
       roomPlayer.finished = true;
     }
     
-    // Check if all players finished
-    let allFinished = true;
+    // Count finished players
+    let finishedCount = 0;
+    let totalPlayers = room.players.size;
     for (const [, p] of room.players) {
-      if (!p.finished) {
-        allFinished = false;
-        break;
+      if (p.finished) {
+        finishedCount++;
       }
     }
     
-    if (allFinished) {
+    console.log(`[GAME] Player ${player.name} finished. ${finishedCount}/${totalPlayers} players done.`);
+    
+    // Broadcast player finished to ALL players in room (including the one who finished)
+    io.to(player.roomCode).emit('playerFinished', {
+      playerId: socket.id,
+      playerName: player.name,
+      score: data.finalScore,
+      playersFinished: finishedCount,
+      totalPlayers: totalPlayers
+    });
+    
+    // Check if all players finished
+    if (finishedCount >= totalPlayers) {
+      console.log(`[GAME] All players finished in room ${player.roomCode}. Sending results...`);
       room.state = 'results';
-      io.to(player.roomCode).emit('gameResults', {
-        leaderboard: room.getLeaderboard(),
-        room: room.toJSON()
-      });
-    } else {
-      socket.to(player.roomCode).emit('playerFinished', {
-        playerId: socket.id,
-        playerName: player.name,
-        score: data.finalScore
-      });
+      
+      // Small delay to let waiting screen show before results
+      setTimeout(() => {
+        io.to(player.roomCode).emit('gameResults', {
+          leaderboard: room.getLeaderboard(),
+          room: room.toJSON()
+        });
+      }, 1500);
     }
   });
 

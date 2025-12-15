@@ -215,6 +215,10 @@ AFRAME.registerState({
     onlineInCountdown: false,
     onlineInPlaying: false,
     onlineInResults: false,
+    onlineWaitingForPlayers: false,  // Waiting for other players to finish
+    onlineWaitingText: '',  // Text showing who we're waiting for
+    onlinePlayersFinished: 0,  // Count of players who finished
+    onlinePlayersTotalInGame: 0,  // Total players in game
     onlineShowMainPanel: true
   },
 
@@ -226,6 +230,7 @@ AFRAME.registerState({
     state.onlineInCountdown = roomState === 'countdown';
     state.onlineInPlaying = roomState === 'playing';
     state.onlineInResults = roomState === 'results';
+    state.onlineWaitingForPlayers = roomState === 'waiting';
     state.onlineShowMainPanel = roomState === '' && !state.onlineCreatePanelActive && !state.onlineJoinPanelActive && !state.onlineModeSelectPanelActive;
   },
 
@@ -626,9 +631,47 @@ AFRAME.registerState({
       state.onlineLeaderboard = payload.leaderboard || [];
     },
 
+    // When THIS player finishes the song - show waiting screen
+    onlineplayerfinished: (state, payload) => {
+      state.onlineRoomState = 'waiting';
+      state.onlineWaitingForPlayers = true;
+      state.isVictory = false;  // Hide normal victory screen
+      state.onlinePlayersFinished = payload.playersFinished || 1;
+      state.onlinePlayersTotalInGame = payload.totalPlayers || state.onlinePlayers.length;
+      state.onlineWaitingText = 'Waiting for other players... (' + state.onlinePlayersFinished + '/' + state.onlinePlayersTotalInGame + ')';
+    },
+
+    // When another player finishes - update waiting count (also for self from server confirmation)
+    onlineotherplayerfinished: (state, payload) => {
+      state.onlinePlayersFinished = payload.playersFinished || state.onlinePlayersFinished + 1;
+      state.onlinePlayersTotalInGame = payload.totalPlayers || state.onlinePlayersTotalInGame;
+      state.onlineWaitingText = 'Waiting for other players... (' + state.onlinePlayersFinished + '/' + state.onlinePlayersTotalInGame + ')';
+      // Also ensure waiting screen is visible
+      if (state.onlineWaitingForPlayers) {
+        state.onlineRoomState = 'waiting';
+      }
+    },
+
     onlinegameresults: (state, payload) => {
       state.onlineLeaderboard = payload.leaderboard || [];
       state.onlineRoomState = 'results';
+      state.onlineWaitingForPlayers = false;
+      state.onlineMenuActive = true;  // Show the online menu with results
+      state.isVictory = false;
+      state.isPlaying = false;
+      
+      // Format leaderboard text
+      if (state.onlineLeaderboard.length > 0) {
+        state.onlineLeaderboardText = state.onlineLeaderboard
+          .sort((a, b) => b.score - a.score)
+          .map((player, index) => {
+            const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.';
+            return medal + ' ' + player.name + ': ' + player.score.toLocaleString() + ' pts';
+          })
+          .join('\\n');
+      } else {
+        state.onlineLeaderboardText = 'No scores recorded';
+      }
     },
 
     onlineerror: (state, payload) => {
