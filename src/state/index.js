@@ -689,6 +689,7 @@ AFRAME.registerState({
     },
 
     onlineleaveroom: state => {
+      // Reset online state
       state.onlineRoomCode = '';
       state.onlineRoomState = '';
       state.onlineGameMode = '';
@@ -697,6 +698,30 @@ AFRAME.registerState({
       state.onlinePlayers = [];
       state.onlinePlayersText = '';
       state.onlineCountdown = 0;
+      
+      // Clear waiting/results screens
+      state.onlineWaitingForPlayers = false;
+      state.onlineInResults = false;
+      state.onlineInLobby = false;
+      state.onlineInCountdown = false;
+      state.onlineInPlaying = false;
+      state.onlineMenuActive = false;
+      
+      // Return to intro screen (BEGIN button)
+      state.introActive = true;
+      state.menuActive = false;
+      state.isPlaying = false;
+      state.isVictory = false;
+      state.isLoading = false;
+      state.isPaused = false;
+      state.isSearching = false;
+      
+      // Clear challenge
+      state.challenge.id = '';
+      state.challenge.audio = '';
+      state.menuSelectedChallenge.id = '';
+      state.menuSelectedChallenge.version = '';
+      
       updateOnlineDisplayTexts(state);
     },
 
@@ -772,19 +797,30 @@ AFRAME.registerState({
 
     // When THIS player finishes the song - show waiting screen
     onlineplayerfinished: (state, payload) => {
+      console.log('[State] onlineplayerfinished - showing waiting screen');
       state.onlineRoomState = 'waiting';
       state.onlineWaitingForPlayers = true;
       state.isVictory = false;  // Hide normal victory screen
+      state.isPlaying = false;  // Stop playing
+      state.isLoading = false;
+      state.menuActive = false; // Don't show menu
+      state.onlineInPlaying = false;  // No longer in playing state
       state.onlinePlayersFinished = payload.playersFinished || 1;
-      state.onlinePlayersTotalInGame = payload.totalPlayers || state.onlinePlayers.length;
+      state.onlinePlayersTotalInGame = payload.totalPlayers || state.onlinePlayers.length || 2;
       state.onlinePlayersWaiting = payload.playersStillPlaying || [];
-      state.onlineWaitingText = 'Waiting for other players... (' + state.onlinePlayersFinished + '/' + state.onlinePlayersTotalInGame + ')';
+      
+      // Set initial waiting text
+      if (state.onlinePlayersFinished === 0) {
+        state.onlineWaitingText = 'Submitting your score...';
+      } else {
+        state.onlineWaitingText = 'Waiting for other players... (' + state.onlinePlayersFinished + '/' + state.onlinePlayersTotalInGame + ')';
+      }
       
       // Format waiting players list
       if (state.onlinePlayersWaiting.length > 0) {
         state.onlineWaitingPlayersText = 'Still playing: ' + state.onlinePlayersWaiting.map(function(p) { return p.name; }).join(', ');
       } else {
-        state.onlineWaitingPlayersText = '';
+        state.onlineWaitingPlayersText = 'Your score: ' + (state.score.score || 0).toLocaleString() + ' pts';
       }
     },
 
@@ -812,11 +848,14 @@ AFRAME.registerState({
       console.log('[State] Game results received:', payload);
       state.onlineLeaderboard = payload.leaderboard || [];
       state.onlineWaitingForPlayers = false;
-      state.onlineMenuActive = true;  // Show the online menu with results
+      state.onlineMenuActive = false;  // Hide online menu panels
+      state.menuActive = false;  // Hide main menu
       state.isVictory = false;
       state.isPlaying = false;
+      state.isLoading = false;
+      state.introActive = false;
       
-      // Set results state using computed helper
+      // Set results state
       state.onlineRoomState = 'results';
       state.onlineInResults = true;
       state.onlineInLobby = false;
@@ -1208,17 +1247,7 @@ AFRAME.registerState({
     songcomplete: state => {
       gtag('event', 'songcomplete', { event_label: state.gameMode });
 
-      // Move back to menu in Ride or Viewer Mode.
-      if (state.gameMode === 'ride' || !state.inVR) {
-        state.challenge.isBeatsPreloaded = false;
-        state.isVictory = false;
-        state.menuActive = true;
-        state.challenge.id = '';
-        return;
-      }
-
-      state.isVictory = true;
-
+      // Calculate final score and accuracy first (needed for online mode)
       state.score.score = isNaN(state.score.score) ? 0 : state.score.score;
       updateScoreAccuracy(state);
       state.score.finalAccuracy = state.score.accuracy;
@@ -1239,6 +1268,32 @@ AFRAME.registerState({
       }
 
       computeBeatsText(state);
+
+      // In online mode, stop the game and wait for other players
+      if (state.onlineInPlaying || state.onlineRoomState === 'playing') {
+        console.log('[State] Song complete in online mode - stopping game, waiting for score submission');
+        // Stop the game
+        state.isPlaying = false;
+        state.isLoading = false;
+        state.challenge.isBeatsPreloaded = false;
+        state.challenge.audio = '';
+        state.challenge.id = '';  // Clear challenge to stop song
+        state.isVictory = false;  // Don't show normal victory
+        state.menuActive = false; // Don't show menu
+        state.onlineInPlaying = false;  // No longer playing
+        return;
+      }
+
+      // Move back to menu in Ride or Viewer Mode (non-VR).
+      if (state.gameMode === 'ride' || !state.inVR) {
+        state.challenge.isBeatsPreloaded = false;
+        state.isVictory = false;
+        state.menuActive = true;
+        state.challenge.id = '';
+        return;
+      }
+
+      state.isVictory = true;
     },
 
     songloadcancel: state => {

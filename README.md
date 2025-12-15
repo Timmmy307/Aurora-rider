@@ -1,6 +1,5 @@
 # Aurora Rider
 
-![Aurora Rider](https://user-images.githubusercontent.com/674727/54646629-e91dc600-4a5c-11e9-8a6e-91e77f28523d.jpg)
 
 **An Online Multiplayer VR Rhythm Game!**
 

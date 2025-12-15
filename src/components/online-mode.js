@@ -249,11 +249,38 @@ AFRAME.registerComponent('online-mode', {
       }
     });
     
-    // Victory/game complete - send final score and show waiting screen
-    scene.addEventListener('victory', function () {
+    // Song complete - send final score and show waiting screen
+    // Using songcomplete instead of victory because victory event is unreliable (async audio callback)
+    scene.addEventListener('songcomplete', function () {
       var state = scene.systems.state.state;
       if (self.inOnlineGame) {
-        console.log('[Online] Sending final score to server');
+        console.log('[Online] Song complete - sending final score to server');
+        console.log('[Online] Score:', state.score.score, 'Accuracy:', state.score.finalAccuracy);
+        
+        // Send score to server
+        multiplayerClient.gameFinished({
+          score: state.score.score,
+          accuracy: parseFloat(state.score.finalAccuracy) || 0,
+          maxCombo: state.score.maxCombo,
+          beatsHit: state.score.beatsHit,
+          beatsMissed: state.score.beatsMissed
+        });
+        
+        // Show initial waiting screen immediately - will be updated by server's playerFinished event
+        scene.emit('onlineplayerfinished', {
+          playersFinished: 0,  // Will be updated by server
+          totalPlayers: state.onlinePlayers.length,
+          playersStillPlaying: []
+        });
+      }
+    });
+    
+    // Also listen to victory event as backup (for VR players)
+    scene.addEventListener('victory', function () {
+      var state = scene.systems.state.state;
+      // Only handle if we haven't already sent score via songcomplete
+      if (self.inOnlineGame && !state.onlineWaitingForPlayers) {
+        console.log('[Online] Victory event - sending final score to server (backup)');
         // Send score to server
         multiplayerClient.gameFinished({
           score: state.score.score,
@@ -266,7 +293,8 @@ AFRAME.registerComponent('online-mode', {
         // Show initial waiting screen - will be updated by server's playerFinished event
         scene.emit('onlineplayerfinished', {
           playersFinished: 0,  // Will be updated by server
-          totalPlayers: state.onlinePlayers.length
+          totalPlayers: state.onlinePlayers.length,
+          playersStillPlaying: []
         });
       }
     });

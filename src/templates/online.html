@@ -235,36 +235,36 @@
   position="0 1.5 -2">
 
   <a-entity
-    geometry="primitive: plane; width: 2.2; height: 1.6"
+    geometry="primitive: plane; width: 2.2; height: 1.8"
     material="shader: flat; color: #111; opacity: 0.95"
     position="0 0 -0.01"></a-entity>
 
-  <a-entity mixin="font" text="align: center; wrapCount: 20; value: FINAL SCORES; width: 2; color: #FF6BE6" position="0 0.6 0.01"></a-entity>
+  <a-entity mixin="font" text="align: center; wrapCount: 20; value: FINAL SCORES; width: 2; color: #FF6BE6" position="0 0.7 0.01"></a-entity>
 
-  <a-entity mixin="font" bind__text="value: onlineLeaderboardText" text="align: center; wrapCount: 40; width: 2; lineHeight: 55; color: #0FF" position="0 0.15 0.01"></a-entity>
+  <a-entity mixin="font" bind__text="value: onlineLeaderboardText" text="align: center; wrapCount: 40; width: 2; lineHeight: 55; color: #0FF" position="0 0.25 0.01"></a-entity>
 
   <!-- Host: Play Again -->
   <a-entity bind__visible="onlineIsHost">
     <a-entity
       mixin="bigMenuButton"
-      bind-toggle__raycastable="onlineIsHost"
-      position="-0.35 -0.5 0.01"
+      bind-toggle__raycastable="onlineIsHost && onlineInResults"
+      position="-0.35 -0.45 0.01"
       proxy-event="event: click; to: a-scene; as: onlineplayagain"
       play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03">
       <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 12; value: PLAY AGAIN" position="0 -0.05 0.01"></a-entity>
     </a-entity>
   </a-entity>
 
-  <!-- Leave Button -->
+  <!-- Leave Button (for everyone) -->
   <a-entity
     mixin="bigMenuButton"
     bind-toggle__raycastable="onlineInResults"
-    position="0.35 -0.5 0.01"
+    bind__position="onlineIsHost && '0.35 -0.45 0.01' || '0 -0.45 0.01'"
     proxy-event="event: click; to: a-scene; as: onlineleaveroom"
     play-sound="event: mouseenter; sound: #hoverSound; volume: 0.03">
     <a-entity mixin="font" text="align: center; color: #FFF; wrapCount: 10; value: LEAVE" position="0 -0.05 0.01"></a-entity>
   </a-entity>
 
-  <!-- Non-host waiting -->
-  <a-entity bind__visible="!onlineIsHost" mixin="font" text="align: center; color: #888; wrapCount: 40; value: Waiting for host...; width: 1.5" position="0 -0.65 0.01"></a-entity>
+  <!-- Non-host info -->
+  <a-entity bind__visible="!onlineIsHost" mixin="font" text="align: center; color: #888; wrapCount: 40; value: Waiting for host to start next game...; width: 1.5" position="0 -0.7 0.01"></a-entity>
 </a-entity>
