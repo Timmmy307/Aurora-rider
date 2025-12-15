@@ -118,7 +118,8 @@ AFRAME.registerComponent('online-mode', {
     });
     
     multiplayerClient.on('gameResults', function (data) {
-      console.log('[Online] Game results received');
+      console.log('[Online] Game results received:', data);
+      console.log('[Online] Leaderboard:', JSON.stringify(data.leaderboard));
       self.inOnlineGame = false;
       scene.emit('onlinegameresults', { leaderboard: data.leaderboard });
     });

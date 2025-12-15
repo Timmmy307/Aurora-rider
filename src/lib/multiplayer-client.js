@@ -271,6 +271,8 @@ class MultiplayerClient {
    * Leave current room
    */
   leaveRoom() {
+    console.log('[MultiplayerClient] leaveRoom called');
+    console.trace('[MultiplayerClient] leaveRoom stack trace');
     if (this.socket && this.connected) {
       this.socket.emit(MULTIPLAYER_EVENTS.LEAVE_ROOM);
     }
