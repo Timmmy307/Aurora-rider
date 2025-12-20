@@ -9,6 +9,7 @@
   <!-- Click blocker - invisible plane to block clicks behind menu -->
   <a-entity
     id="onlineMenuBlocker"
+    bind__visible="onlineMenuActive"
     bind-toggle__raycastable="onlineMenuActive"
     geometry="primitive: plane; width: 10; height: 10"
     material="shader: flat; color: #000; opacity: 0; transparent: true; side: double"

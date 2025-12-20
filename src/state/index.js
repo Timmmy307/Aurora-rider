@@ -469,6 +469,14 @@ AFRAME.registerState({
       state.menuSelectedChallenge.difficultyId = state.challenge.difficultyId;
       state.challenge.id = '';
       state.leaderboardQualified = false;
+      // Reset online states to prevent blocker from staying active
+      state.onlineInResults = false;
+      state.onlineWaitingForPlayers = false;
+      state.onlineInPlaying = false;
+      state.onlineMenuActive = false;
+      state.onlineInLobby = false;
+      state.onlineInCountdown = false;
+      state.onlineRoomState = '';
     },
 
     gamemode: (state, mode) => {
